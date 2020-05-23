@@ -75,7 +75,7 @@ utc2Zone d = Date (utcDay d) (utcMonth d) (utcYear d)
                   (utcHour d) (utcMinute d) (utcSecond d) utcZone
 
 instance Show UTCDate where
-  show d = show $ utc2Zone d
+  show = show . utc2Zone
 
 (!?) :: [a] -> Int -> Maybe a
 [] !? _ = Nothing
@@ -126,7 +126,7 @@ addHour h d =
   in if h' > 23
         then addHour (h' - 24) $ addDay 1 d {hour = 0}
         else if h' < 0
-                then addHour h' . addDay (-1) $ d {hour = 23}
+                then addHour (h' + 1) . addDay (-1) $ d {hour = 23}
                 else d {hour = h'}
 
 addMin :: Int -> Date -> Date
@@ -135,7 +135,7 @@ addMin m d =
   in if m' > 59
         then addMin (m' - 60) $ addHour 1 d {minute = 0}
         else if m' < 0
-                then addMin m' . addHour (-1) $ d {minute = 59}
+                then addMin (m' + 1) . addHour (-1) $ d {minute = 59}
                 else d {minute = m'}
 
 addSec :: Int -> Date -> Date
@@ -144,7 +144,7 @@ addSec s d =
   in if s' > 59
         then addSec (s' - 60) $ addMin 1 d {second = 0}
         else if s' < 0
-                then addSec s' . addMin (-1) $ d {second = 59}
+                then addSec (s' + 1) . addMin (-1) $ d {second = 59}
                 else d {second = s'}
 
 utcZone :: TimeZone
@@ -157,7 +157,7 @@ adjustDate d =
       utcDate = case dir z of
                   Plus -> addMin diff d {zone = utcZone}
                   Minus -> addMin (-diff) d {zone = utcZone}
-      d2utc d = UTCDate (day d) (month d) (year d) (hour d) (minute d) (second d)
+      d2utc d = UTCDate (year d) (month d) (day d) (hour d) (minute d) (second d)
   in d2utc utcDate
 
 instance Ord Date where
