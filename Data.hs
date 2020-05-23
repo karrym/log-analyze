@@ -3,13 +3,13 @@
 module Data where
 
 newtype Host = Host String
-             deriving (Show)
+             deriving (Eq,Ord,Show)
 
 newtype Client = Client String
-               deriving (Show)
+               deriving (Eq,Ord,Show)
 
 newtype User = User String
-             deriving (Show)
+             deriving (Eq,Ord,Show)
 
 data Date = Date {
   day :: Int,
@@ -19,22 +19,22 @@ data Date = Date {
   minute :: Int,
   second :: Int,
   zone :: String}
-          deriving (Show)
+          deriving (Eq,Ord,Show)
 
 newtype Request = Request String
-                deriving (Show)
+                deriving (Eq,Ord,Show)
 
 newtype Status = Status Int
-               deriving (Show)
+               deriving (Eq,Ord,Show)
 
 newtype Size = Size Int
-             deriving (Show)
+             deriving (Eq,Ord,Show)
 
 newtype Refer = Refer String
-              deriving (Show)
+              deriving (Eq,Ord,Show)
 
 newtype UserAgent = UserAgent String
-                  deriving (Show)
+                  deriving (Eq,Ord,Show)
 
 data Log = Log {
   host :: Host,
@@ -46,4 +46,4 @@ data Log = Log {
   size :: Size,
   refer :: Refer,
   userAgent :: UserAgent }
-         deriving (Show)
+         deriving (Eq,Ord,Show)
