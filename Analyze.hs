@@ -22,9 +22,9 @@ type AnalyzeData = (DateMap, HostMap)
 TODO:
 日付ごとに平均
 -}
-accumByDate :: UTCDate -> DateMap -> DateMap
+accumByDate :: Date -> DateMap -> DateMap
 accumByDate d m = IM.insert h (IM.findWithDefault 0 h m + 1) m
-  where h = utcHour d
+  where h = hour d
 
 accumByHost :: Host -> HostMap -> HostMap
 accumByHost h m = M.insert h (M.findWithDefault 0 h m + 1) m

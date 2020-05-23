@@ -4,6 +4,9 @@ module Data where
 
 import qualified Data.Map as M
 import Data.Tuple
+import Data.Maybe
+
+import GHC.Stack (HasCallStack)
 
 newtype Host = Host String
              deriving (Eq,Ord)
@@ -24,7 +27,7 @@ instance Show User where
   show (User s) = s
 
 data Direction = Plus | Minus
-               deriving (Eq, Ord)
+               deriving (Eq, Ord, Enum)
 
 instance Show Direction where
   show Plus = "+"
@@ -51,8 +54,8 @@ data Date = Date {
 
 instance Show Date where
   show d = formatInt 2 (day d)
-           ++ "/" ++ formatInt 2 (month d)
-           ++ "/" ++ formatInt 2 (year d)
+           ++ "/" ++ fromJust (getNotation $ month d)
+           ++ "/" ++ formatInt 4 (year d)
            ++ ":" ++ formatInt 2 (hour d)
            ++ ":" ++ formatInt 2 (minute d)
            ++ ":" ++ formatInt 2 (second d)
@@ -74,14 +77,23 @@ utc2Zone d = Date (utcDay d) (utcMonth d) (utcYear d)
 instance Show UTCDate where
   show d = show $ utc2Zone d
 
+(!?) :: [a] -> Int -> Maybe a
+[] !? _ = Nothing
+(x:_) !? 0 = Just x
+(_:xs) !? n = xs !? (n-1)
+
 isLeap :: Int -> Bool
 isLeap y = (y `mod` 4 == 0) && (not (y `mod` 100 == 0) || (y `mod` 400 == 0))
 
-daysOfMonth :: Int -> [Int]
-daysOfMonth y =
+daysOfMonth :: HasCallStack => Int -> Int -> Int
+daysOfMonth y m =
   if isLeap y
-  then [31,29,31,30,31,30,31,31,30,31,30,31]
-  else [31,28,31,30,31,30,31,31,30,31,30,31]
+  then case [31,29,31,30,31,30,31,31,30,31,30,31] !? (m - 1) of
+         Nothing -> error $ "index out of bounds in daysOfMonth: m = " ++ show m
+         Just d -> d
+  else case [31,28,31,30,31,30,31,31,30,31,30,31] !? (m - 1) of
+         Nothing -> error $ "index out of bounds in daysOfMonth: m = " ++ show m
+         Just d -> d
 
 addYear :: Int -> Date -> Date
 addYear y d = d {year = year d + y}
@@ -90,22 +102,22 @@ addMonth :: Int -> Date -> Date
 addMonth m d =
   let m' = month d + m
   in if m' > 12
-     then addMonth (m' - 12) $ addYear 1 d {month = 1}
+     then addMonth (m' - 13) $ addYear 1 d {month = 1}
      else if m' < 1
-             then addMonth m' $ addYear (-1) d {month = 12}
+             then addMonth m' . addYear (-1) $ d {month = 12}
              else d {month = m'}
 
 addDay :: Int -> Date -> Date
 addDay d date =
   let d' = day date + d
       m = month date
-      days = daysOfMonth (year date) !! m
+      days = daysOfMonth (year date) m
   in if d' > days
-        then addDay (d' - days) $ addMonth 1 date {day = 1}
+        then addDay (d' - days - 1) $ addMonth 1 date {day = 1}
         else if d' < 1
                 then let date' = addMonth (-1) date
-                     in addDay d' date'
-                          {month = daysOfMonth (year date') !! month date'}
+                     in addDay d' $ date'
+                          {day = daysOfMonth (year date') $ month date'}
                 else date {day = d'}
 
 addHour :: Int -> Date -> Date
@@ -114,7 +126,7 @@ addHour h d =
   in if h' > 23
         then addHour (h' - 24) $ addDay 1 d {hour = 0}
         else if h' < 0
-                then addHour h' $ addDay (-1) d {hour = 23}
+                then addHour h' . addDay (-1) $ d {hour = 23}
                 else d {hour = h'}
 
 addMin :: Int -> Date -> Date
@@ -123,7 +135,7 @@ addMin m d =
   in if m' > 59
         then addMin (m' - 60) $ addHour 1 d {minute = 0}
         else if m' < 0
-                then addMin m' $ addHour (-1) d {minute = 59}
+                then addMin m' . addHour (-1) $ d {minute = 59}
                 else d {minute = m'}
 
 addSec :: Int -> Date -> Date
@@ -132,7 +144,7 @@ addSec s d =
   in if s' > 59
         then addSec (s' - 60) $ addMin 1 d {second = 0}
         else if s' < 0
-                then addSec s' $ addMin (-1) d {second = 59}
+                then addSec s' . addMin (-1) $ d {second = 59}
                 else d {second = s'}
 
 utcZone :: TimeZone
@@ -185,7 +197,7 @@ data Log = Log {
   host :: Host,
   client :: Client,
   user :: User,
-  date :: UTCDate,
+  date :: Date,
   request :: Request,
   lastStatus :: Status,
   size :: Size,

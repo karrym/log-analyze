@@ -26,7 +26,7 @@ printResult (dm, hm) = do
   putStrLn "\n\n"
   printHostMap hm
 
-type Period = (UTCDate, UTCDate)
+type Period = (Date, Date)
 
 getPeriod :: [String] -> Either (Maybe String) Period
 getPeriod xs =
@@ -38,7 +38,7 @@ getPeriod xs =
               Nothing -> Left (Just "parse error at first argument of -d")
               Just d1 -> case evalStateT parseDate (xs !! 1) of
                            Nothing -> Left (Just "parse error at second argument of -d")
-                           Just d2 -> Right (adjustDate d1, adjustDate d2)
+                           Just d2 -> Right (d1, d2)
 
 argParse :: [String] -> [FilePath]
   -> ([FilePath], Either (Maybe String) Period)
