@@ -78,4 +78,5 @@ genTestFile path size = withFile path WriteMode (go size)
 
 main :: IO ()
 main = do
-  genTestFile "test/middle-test" 10000
+  [path, lines] <- getArgs
+  genTestFile path (read lines)
