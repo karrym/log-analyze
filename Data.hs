@@ -11,6 +11,15 @@ newtype Client = Client String
 newtype User = User String
              deriving (Eq,Ord,Show)
 
+data Direction = Plus | Minus
+               deriving (Eq, Ord, Show)
+
+data TimeZone = TimeZone {
+  dir :: Direction,
+  hourZone :: Int,
+  minZone :: Int }
+  deriving (Eq, Ord, Show)
+
 data Date = Date {
   day :: Int,
   month :: Int,
@@ -18,7 +27,7 @@ data Date = Date {
   hour :: Int,
   minute :: Int,
   second :: Int,
-  zone :: String}
+  zone :: TimeZone}
           deriving (Eq,Ord,Show)
 
 newtype Request = Request String

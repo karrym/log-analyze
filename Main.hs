@@ -38,6 +38,25 @@ printHostMap m =
   forM_ xs $ \(Host h, n) -> putStrLn $ h ++ " : " ++ show n
   where xs = sortBy (\a b -> compare (snd a) (snd b)) $ M.toList m
 
+getPeriod :: [String] -> Either (Maybe String) (Date, Date)
+getPeriod xs =
+  if length xs < 2
+  then Left (Just "not enough argument of -d")
+  else if length xs > 2
+       then Left (Just "too many argument of -d")
+       else case evalStateT parseDate (xs !! 0) of
+              Nothing -> Left (Just "parse error at first argument of -d")
+              Just d1 -> case evalStateT parseDate (xs !! 1) of
+                           Nothing -> Left (Just "parse error at second argument of -d")
+                           Just d2 -> Right (d1, d2)
+
+argParse :: [String] -> [FilePath] -> ([FilePath], Either (Maybe String) (Date, Date))
+argParse [] ps = (ps, Left Nothing)
+argParse (x:xs) ps =
+  if x == "-d"
+  then (ps, getPeriod xs)
+  else argParse xs (x:ps)
+
 main :: IO ()
 main = do
   ps <- getArgs

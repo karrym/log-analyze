@@ -37,6 +37,13 @@ monthMap = M.fromList
 getMonth :: String -> Maybe Int
 getMonth = flip M.lookup monthMap
 
+parseTimeZone :: Parse TimeZone
+parseTimeZone = do
+  dir <- (char '+' *> pure Plus) <|> (char '-' *> pure Minus)
+  hou <- read <$> (item >>= \a -> item >>= \b -> return [a,b])
+  min <- read <$> (item >>= \a -> item >>= \b -> return [a,b])
+  return $ TimeZone dir hou min
+
 parseDate :: Parse Date
 parseDate = do
   day <- read <$> ident '/'
@@ -51,7 +58,7 @@ parseDate = do
   char ':'
   second <- read <$> ident ' '
   char ' '
-  zone <- ident ']'
+  zone <- parseTimeZone
   return $ Date day month year hour minute second zone
 
 parseLog :: Parse Log
