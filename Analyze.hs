@@ -22,6 +22,7 @@ accumByHost :: Host -> HostMap -> HostMap
 accumByHost h m = M.insert h (M.findWithDefault 0 h m + 1) m
 
 
-analyzeLogs :: [Log] -> (DateMap, HostMap)
-analyzeLogs ls = ( foldl' (\m l -> accumByDate (date l) m) IM.empty ls
-                , foldl' (\m l -> accumByHost (host l) m) M.empty ls)
+analyzeLogs :: (Date -> Bool) -> [Log] -> (DateMap, HostMap)
+analyzeLogs p ls = ( foldl' (\m l -> accumByDate (date l) m) IM.empty ls'
+                , foldl' (\m l -> accumByHost (host l) m) M.empty ls')
+  where ls' = filter (\l -> p (date l)) ls

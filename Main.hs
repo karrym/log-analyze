@@ -11,21 +11,17 @@ import qualified Data.Map as M
 import System.Environment
 import Data.List
 import Data.Foldable
+import Data.Maybe
+
+untilM :: Monad m => m Bool -> m a -> m [a]
+untilM mp md = mp >>= \p ->
+  if p then return [] else (:) <$> md <*> untilM mp md
 
 getLogs :: FilePath -> IO [Log]
 getLogs path = flip runContT return $ do
   h <- ContT $ withFile path ReadMode
-  liftIO $ getLogsFromHandle h
-  where
-    getLogsFromHandle h = do
-      b <- hIsEOF h
-      if b
-        then return []
-        else do
-          s <- hGetLine h
-          case evalStateT parseLog s of
-            Nothing -> getLogsFromHandle h
-            Just log -> (log :) <$> getLogsFromHandle h
+  ls <- liftIO . untilM (hIsEOF h) . fmap (evalStateT parseLog) $ hGetLine h
+  return $ catMaybes ls
 
 printDateMap :: DateMap -> IO ()
 printDateMap m = do
@@ -57,11 +53,19 @@ argParse (x:xs) ps =
   then (ps, getPeriod xs)
   else argParse xs (x:ps)
 
-main :: IO ()
-main = do
-  ps <- getArgs
+analyze :: [FilePath] -> (Date -> Bool) -> IO ()
+analyze ps f = do
   ls <- foldlM (\ls p -> (++ ls) <$> getLogs p) [] ps
-  let (dm, hm) = analyzeLogs ls
+  let (dm, hm) = analyzeLogs f ls
   printDateMap dm
   putStr "\n\n"
   printHostMap hm
+
+main :: IO ()
+main = do
+  as <- getArgs
+  let (ps, opt) = argParse as []
+  case opt of
+    (Left (Just err)) -> putStrLn err
+    (Left Nothing) -> analyze ps (const True)
+    (Right (b, e)) -> analyze ps (\d -> b <= d && d <= e)

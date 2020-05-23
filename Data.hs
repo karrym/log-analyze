@@ -28,7 +28,83 @@ data Date = Date {
   minute :: Int,
   second :: Int,
   zone :: TimeZone}
-          deriving (Eq,Ord,Show)
+          deriving (Eq,Show)
+
+isLeap :: Int -> Bool
+isLeap y = (y `mod` 4 == 0) && (not (y `mod` 100 == 0) || (y `mod` 400 == 0))
+
+daysOfMonth :: Int -> [Int]
+daysOfMonth y =
+  if isLeap y
+  then [31,29,31,30,31,30,31,31,30,31,30,31]
+  else [31,28,31,30,31,30,31,31,30,31,30,31]
+
+addYear :: Int -> Date -> Date
+addYear y d = d {year = year d + y}
+
+addMonth :: Int -> Date -> Date
+addMonth m d =
+  let m' = month d + m
+  in if m' > 12
+     then addMonth (m' - 12) $ addYear 1 d {month = 1}
+     else if m' < 1
+             then addMonth m' $ addYear (-1) d {month = 12}
+             else d {month = m'}
+
+addDay :: Int -> Date -> Date
+addDay d date =
+  let d' = day date + d
+      m = month date
+      days = daysOfMonth (year date) !! m
+  in if d' > days
+        then addDay (d' - days) $ addMonth 1 date {day = 1}
+        else if d' < 1
+                then let date' = addMonth (-1) date
+                     in addDay d' date'
+                          {month = daysOfMonth (year date') !! month date'}
+                else date {day = d'}
+
+addHour :: Int -> Date -> Date
+addHour h d =
+  let h' = hour d + h
+  in if h' > 23
+        then addHour (h' - 24) $ addDay 1 d {hour = 0}
+        else if h' < 0
+                then addHour h' $ addDay (-1) d {hour = 23}
+                else d {hour = h'}
+
+addMin :: Int -> Date -> Date
+addMin m d =
+  let m' = minute d + m
+  in if m' > 59
+        then addMin (m' - 60) $ addHour 1 d {minute = 0}
+        else if m' < 0
+                then addMin m' $ addHour (-1) d {minute = 59}
+                else d {minute = m'}
+
+addSec :: Int -> Date -> Date
+addSec s d =
+  let s' = second d + s
+  in if s' > 59
+        then addSec (s' - 60) $ addMin 1 d {second = 0}
+        else if s' < 0
+                then addSec s' $ addMin (-1) d {second = 59}
+                else d {second = s'}
+
+utcZone :: TimeZone
+utcZone = TimeZone Plus 0 0
+
+adjustDate :: Date -> Date
+adjustDate d =
+  let z = zone d
+      diff = minZone z + 60 * hourZone z
+  in case dir z of
+       Plus -> addMin diff d {zone = utcZone}
+       Minus -> addMin (-diff) d {zone = utcZone}
+
+instance Ord Date where
+  d1 <= d2 = getSeq (adjustDate d1) <= getSeq (adjustDate d2)
+           where getSeq d = [year d, month d, day d, hour d, minute d, second d]
 
 newtype Request = Request String
                 deriving (Eq,Ord,Show)
