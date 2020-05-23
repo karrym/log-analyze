@@ -1,27 +1,13 @@
 module Main where
 
-import Control.Monad.Cont
 import Parse
 import Data
 import Analyze
-import System.IO
 import Control.Monad.State
 import qualified Data.IntMap as IM
 import qualified Data.Map as M
 import System.Environment
 import Data.List
-import Data.Foldable
-import Data.Maybe
-
-untilM :: Monad m => m Bool -> m a -> m [a]
-untilM mp md = mp >>= \p ->
-  if p then return [] else (:) <$> md <*> untilM mp md
-
-getLogs :: FilePath -> IO [Log]
-getLogs path = flip runContT return $ do
-  h <- ContT $ withFile path ReadMode
-  ls <- liftIO . untilM (hIsEOF h) . fmap (evalStateT parseLog) $ hGetLine h
-  return $ catMaybes ls
 
 printDateMap :: DateMap -> IO ()
 printDateMap m = do
@@ -33,6 +19,12 @@ printHostMap :: HostMap -> IO ()
 printHostMap m =
   forM_ xs $ \(Host h, n) -> putStrLn $ h ++ " : " ++ show n
   where xs = sortBy (\a b -> compare (snd a) (snd b)) $ M.toList m
+
+printResult :: AnalyzeData -> IO ()
+printResult (dm, hm) = do
+  printDateMap dm
+  putStrLn "\n\n"
+  printHostMap hm
 
 type Period = (UTCDate, UTCDate)
 
@@ -56,19 +48,12 @@ argParse (x:xs) ps =
   then (ps, getPeriod xs)
   else argParse xs (x:ps)
 
-analyze :: [FilePath] -> (Log -> Bool) -> IO ()
-analyze ps f = do
-  ls <- foldlM (\ls p -> (++ ls) <$> getLogs p) [] ps
-  let (dm, hm) = analyzeLogs f ls
-  printDateMap dm
-  putStr "\n\n"
-  printHostMap hm
-
 main :: IO ()
 main = do
   as <- getArgs
   let (ps, opt) = argParse as []
   case opt of
-    (Left (Just err)) -> putStrLn err
-    (Left Nothing) -> analyze ps (const True)
-    (Right (b, e)) -> analyze ps (\d -> b <= date d && date d <= e)
+          (Left (Just err)) -> putStrLn err
+          (Left Nothing) -> analyze ps (const True) >>= printResult
+          (Right (b, e)) -> analyze ps (\d -> b <= date d && date d <= e)
+                              >>= printResult
