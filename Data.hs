@@ -2,23 +2,42 @@
 
 module Data where
 
+import qualified Data.Map as M
+import Data.Tuple
+
 newtype Host = Host String
-             deriving (Eq,Ord,Show)
+             deriving (Eq,Ord)
+
+instance Show Host where
+  show (Host s) = s
 
 newtype Client = Client String
-               deriving (Eq,Ord,Show)
+               deriving (Eq,Ord)
+
+instance Show Client where
+  show (Client s) = s
 
 newtype User = User String
-             deriving (Eq,Ord,Show)
+             deriving (Eq,Ord)
+
+instance Show User where
+  show (User s) = s
 
 data Direction = Plus | Minus
-               deriving (Eq, Ord, Show)
+               deriving (Eq, Ord)
+
+instance Show Direction where
+  show Plus = "+"
+  show Minus = "-"
 
 data TimeZone = TimeZone {
   dir :: Direction,
   hourZone :: Int,
   minZone :: Int }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord)
+
+instance Show TimeZone where
+  show (TimeZone d h m) = show d ++ formatInt 2 h ++ formatInt 2 m
 
 data Date = Date {
   day :: Int,
@@ -28,16 +47,32 @@ data Date = Date {
   minute :: Int,
   second :: Int,
   zone :: TimeZone}
-          deriving (Eq,Show)
+          deriving (Eq)
+
+instance Show Date where
+  show d = formatInt 2 (day d)
+           ++ "/" ++ formatInt 2 (month d)
+           ++ "/" ++ formatInt 2 (year d)
+           ++ ":" ++ formatInt 2 (hour d)
+           ++ ":" ++ formatInt 2 (minute d)
+           ++ ":" ++ formatInt 2 (second d)
+           ++ " " ++ show (zone d)
 
 data UTCDate = UTCDate {
-  utcDay :: Int,
-  utcMonth :: Int,
   utcYear :: Int,
+  utcMonth :: Int,
+  utcDay :: Int,
   utcHour :: Int,
   utcMinute :: Int,
   utcSecond :: Int}
-          deriving (Eq,Ord,Show)
+          deriving (Eq,Ord)
+
+utc2Zone :: UTCDate -> Date
+utc2Zone d = Date (utcDay d) (utcMonth d) (utcYear d)
+                  (utcHour d) (utcMinute d) (utcSecond d) utcZone
+
+instance Show UTCDate where
+  show d = show $ utc2Zone d
 
 isLeap :: Int -> Bool
 isLeap y = (y `mod` 4 == 0) && (not (y `mod` 100 == 0) || (y `mod` 400 == 0))
@@ -117,19 +152,34 @@ instance Ord Date where
   d1 <= d2 = adjustDate d1 <= adjustDate d2
 
 newtype Request = Request String
-                deriving (Eq,Ord,Show)
+                deriving (Eq,Ord)
+
+instance Show Request where
+  show (Request s) = s
 
 newtype Status = Status Int
-               deriving (Eq,Ord,Show)
+               deriving (Eq,Ord)
+
+instance Show Status where
+  show (Status i) = show i
 
 newtype Size = Size Int
-             deriving (Eq,Ord,Show)
+             deriving (Eq,Ord)
+
+instance Show Size where
+  show (Size i) = if i == 0 then "-" else show i
 
 newtype Refer = Refer String
-              deriving (Eq,Ord,Show)
+              deriving (Eq,Ord)
+
+instance Show Refer where
+  show (Refer s) = s
 
 newtype UserAgent = UserAgent String
-                  deriving (Eq,Ord,Show)
+                  deriving (Eq,Ord)
+
+instance Show UserAgent where
+  show (UserAgent s) = s
 
 data Log = Log {
   host :: Host,
@@ -141,4 +191,39 @@ data Log = Log {
   size :: Size,
   refer :: Refer,
   userAgent :: UserAgent }
-         deriving (Eq,Ord,Show)
+         deriving (Eq,Ord)
+
+instance Show Log where
+  show l = show (host l)
+           ++ " " ++ show (client l)
+           ++ " " ++ show (user l)
+           ++ " [" ++ show (date l) ++ "]"
+           ++ " \"" ++ show (request l) ++ "\""
+           ++ " " ++ show (lastStatus l)
+           ++ " " ++ show (size l)
+           ++ " \"" ++ show (refer l) ++ "\""
+           ++ " \"" ++ show (userAgent l) ++ "\""
+
+type Digit = Int
+
+formatInt :: Digit -> Int -> String
+formatInt 0 _ = ""
+formatInt n i = formatInt (n-1) (i `div` 10) ++ show (i `mod` 10)
+
+monthList = [ ("Jan", 1), ("Feb", 2), ("Mar", 3), ("Apr", 4)
+           , ("May", 5), ("Jun", 6), ("Jul", 7), ("Aug", 8)
+           , ("Sep", 9), ("Oct", 10), ("Nov", 11), ("Dec", 12)]
+
+monthMap :: M.Map String Int
+monthMap = M.fromList monthList
+
+monthMapInv :: M.Map Int String
+monthMapInv = M.fromList $ map swap monthList
+
+getMonth :: String -> Maybe Int
+getMonth = flip M.lookup monthMap
+
+getNotation :: Int -> Maybe String
+getNotation = flip M.lookup monthMapInv
+
+

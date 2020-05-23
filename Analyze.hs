@@ -12,7 +12,7 @@ import Data
 import System.IO
 import Control.Monad.State
 
-type DateMap = IM.IntMap Int
+type DateMap = IM.IntMap Integer
 
 type HostMap = M.Map Host Integer
 

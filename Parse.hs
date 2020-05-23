@@ -28,15 +28,6 @@ char c = do
 stringLit :: Parse String
 stringLit = char '\"' *> ident '\"' <* char '\"'
 
-monthMap :: M.Map String Int
-monthMap = M.fromList
-           [ ("Jan", 1), ("Feb", 2), ("Mar", 3), ("Apr", 4)
-           , ("May", 5), ("Jun", 6), ("Jul", 7), ("Aug", 8)
-           , ("Sep", 9), ("Oct", 10), ("Nov", 11), ("Dec", 12)]
-
-getMonth :: String -> Maybe Int
-getMonth = flip M.lookup monthMap
-
 parseTimeZone :: Parse TimeZone
 parseTimeZone = do
   dir <- (char '+' *> pure Plus) <|> (char '-' *> pure Minus)
