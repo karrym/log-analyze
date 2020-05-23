@@ -34,7 +34,9 @@ printHostMap m =
   forM_ xs $ \(Host h, n) -> putStrLn $ h ++ " : " ++ show n
   where xs = sortBy (\a b -> compare (snd a) (snd b)) $ M.toList m
 
-getPeriod :: [String] -> Either (Maybe String) (Date, Date)
+type Period = (UTCDate, UTCDate)
+
+getPeriod :: [String] -> Either (Maybe String) Period
 getPeriod xs =
   if length xs < 2
   then Left (Just "not enough argument of -d")
@@ -44,16 +46,17 @@ getPeriod xs =
               Nothing -> Left (Just "parse error at first argument of -d")
               Just d1 -> case evalStateT parseDate (xs !! 1) of
                            Nothing -> Left (Just "parse error at second argument of -d")
-                           Just d2 -> Right (d1, d2)
+                           Just d2 -> Right (adjustDate d1, adjustDate d2)
 
-argParse :: [String] -> [FilePath] -> ([FilePath], Either (Maybe String) (Date, Date))
+argParse :: [String] -> [FilePath]
+  -> ([FilePath], Either (Maybe String) Period)
 argParse [] ps = (ps, Left Nothing)
 argParse (x:xs) ps =
   if x == "-d"
   then (ps, getPeriod xs)
   else argParse xs (x:ps)
 
-analyze :: [FilePath] -> (Date -> Bool) -> IO ()
+analyze :: [FilePath] -> (Log -> Bool) -> IO ()
 analyze ps f = do
   ls <- foldlM (\ls p -> (++ ls) <$> getLogs p) [] ps
   let (dm, hm) = analyzeLogs f ls
@@ -68,4 +71,4 @@ main = do
   case opt of
     (Left (Just err)) -> putStrLn err
     (Left Nothing) -> analyze ps (const True)
-    (Right (b, e)) -> analyze ps (\d -> b <= d && d <= e)
+    (Right (b, e)) -> analyze ps (\d -> b <= date d && date d <= e)

@@ -30,6 +30,15 @@ data Date = Date {
   zone :: TimeZone}
           deriving (Eq,Show)
 
+data UTCDate = UTCDate {
+  utcDay :: Int,
+  utcMonth :: Int,
+  utcYear :: Int,
+  utcHour :: Int,
+  utcMinute :: Int,
+  utcSecond :: Int}
+          deriving (Eq,Ord,Show)
+
 isLeap :: Int -> Bool
 isLeap y = (y `mod` 4 == 0) && (not (y `mod` 100 == 0) || (y `mod` 400 == 0))
 
@@ -94,17 +103,18 @@ addSec s d =
 utcZone :: TimeZone
 utcZone = TimeZone Plus 0 0
 
-adjustDate :: Date -> Date
+adjustDate :: Date -> UTCDate
 adjustDate d =
   let z = zone d
       diff = minZone z + 60 * hourZone z
-  in case dir z of
-       Plus -> addMin diff d {zone = utcZone}
-       Minus -> addMin (-diff) d {zone = utcZone}
+      utcDate = case dir z of
+                  Plus -> addMin diff d {zone = utcZone}
+                  Minus -> addMin (-diff) d {zone = utcZone}
+      d2utc d = UTCDate (day d) (month d) (year d) (hour d) (minute d) (second d)
+  in d2utc utcDate
 
 instance Ord Date where
-  d1 <= d2 = getSeq (adjustDate d1) <= getSeq (adjustDate d2)
-           where getSeq d = [year d, month d, day d, hour d, minute d, second d]
+  d1 <= d2 = adjustDate d1 <= adjustDate d2
 
 newtype Request = Request String
                 deriving (Eq,Ord,Show)
@@ -125,7 +135,7 @@ data Log = Log {
   host :: Host,
   client :: Client,
   user :: User,
-  date :: Date,
+  date :: UTCDate,
   request :: Request,
   lastStatus :: Status,
   size :: Size,

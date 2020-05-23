@@ -70,7 +70,7 @@ parseLog = do
   user <- User <$> ident ' '
   char ' '
   char '['
-  date <- parseDate
+  date <- adjustDate <$> parseDate
   char ']'
   char ' '
   request <- Request <$> stringLit
