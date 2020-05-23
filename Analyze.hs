@@ -39,17 +39,21 @@ stepAnalyze p l (dm, hm) =
   then (accumByDate (date l) dm, accumByHost (host l) hm)
   else (dm, hm)
 
-untilM :: Monad m => m Bool -> m a -> m [a]
-untilM mp md = mp >>= \p ->
-  if p then return [] else (:) <$> md <*> untilM mp md
+emptyData :: AnalyzeData
+emptyData = (IM.empty, M.empty)
 
-getLogs :: FilePath -> IO [Log]
-getLogs path = flip runContT return $ do
+untilM :: Monad m => m Bool -> a -> (a -> m a) -> m a
+untilM mp a md = mp >>= \p ->
+  if p then return a else md a >>= flip (untilM mp) md
+
+analyzeFile :: (Log -> Bool) -> FilePath -> AnalyzeData -> IO AnalyzeData
+analyzeFile p path ad = flip runContT return $ do
   h <- ContT $ withFile path ReadMode
-  ls <- liftIO . untilM (hIsEOF h) . fmap (evalStateT parseLog) $ hGetLine h
-  return $ catMaybes ls
+  liftIO . untilM (hIsEOF h) ad $ stepLog h p
+
+stepLog :: Handle -> (Log -> Bool) -> AnalyzeData -> IO AnalyzeData
+stepLog h p ad =
+  maybe ad (flip (stepAnalyze p) ad) . evalStateT parseLog <$> hGetLine h
 
 analyze :: [FilePath] -> (Log -> Bool) -> IO AnalyzeData
-analyze ps f = do
-  ls <- foldlM (\ls p -> (++ ls) <$> getLogs p) [] ps
-  return $ analyzeLogs f ls
+analyze ps f = foldlM (flip (analyzeFile f)) emptyData ps
