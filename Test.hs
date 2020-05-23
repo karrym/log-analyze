@@ -69,7 +69,7 @@ genLog = do
         Nothing -> error "index out of bounds in genLog at testHosts"
         Just h -> do
           date <- genDate
-          return $ Log h testClient testUser (utc2Zone $ adjustDate date) r testStatus testSize testRefer testAgent
+          return $ Log h testClient testUser (adjustDate date) r testStatus testSize testRefer testAgent
 
 genTestFile :: FilePath -> Int -> IO ()
 genTestFile path size = withFile path WriteMode (go size)

@@ -21,12 +21,12 @@ printHostMap m =
   where xs = sortBy (\a b -> compare (snd a) (snd b)) $ M.toList m
 
 printResult :: AnalyzeData -> IO ()
-printResult (dm, hm) = do
+printResult (AnalyzeData dm hm) = do
   printDateMap dm
   putStrLn "\n\n"
   printHostMap hm
 
-type Period = (Date, Date)
+type Period = (UTCDate, UTCDate)
 
 getPeriod :: [String] -> Either (Maybe String) Period
 getPeriod xs =
@@ -38,7 +38,7 @@ getPeriod xs =
               Nothing -> Left (Just "parse error at first argument of -d")
               Just d1 -> case evalStateT parseDate (xs !! 1) of
                            Nothing -> Left (Just "parse error at second argument of -d")
-                           Just d2 -> Right (d1, d2)
+                           Just d2 -> Right (adjustDate d1, adjustDate d2)
 
 argParse :: [String] -> [FilePath]
   -> ([FilePath], Either (Maybe String) Period)

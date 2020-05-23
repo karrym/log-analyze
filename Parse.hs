@@ -3,7 +3,7 @@ module Parse where
 import Control.Monad
 import Control.Applicative
 import Control.Monad.State
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import Data
 
 type Parse = StateT String Maybe
@@ -61,7 +61,7 @@ parseLog = do
   user <- User <$> ident ' '
   char ' '
   char '['
-  date <- parseDate
+  date <- adjustDate <$> parseDate
   char ']'
   char ' '
   request <- Request <$> stringLit

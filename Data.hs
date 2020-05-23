@@ -1,8 +1,8 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, Strict #-}
 
 module Data where
 
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import Data.Tuple
 import Data.Maybe
 
@@ -197,7 +197,7 @@ data Log = Log {
   host :: Host,
   client :: Client,
   user :: User,
-  date :: Date,
+  date :: UTCDate,
   request :: Request,
   lastStatus :: Status,
   size :: Size,
