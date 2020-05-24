@@ -155,8 +155,8 @@ adjustDate d =
   let z = zone d
       diff = minZone z + 60 * hourZone z
       utcDate = case dir z of
-                  Plus -> addMin diff d {zone = utcZone}
-                  Minus -> addMin (-diff) d {zone = utcZone}
+                  Plus -> addMin (-diff) d {zone = utcZone}
+                  Minus -> addMin diff d {zone = utcZone}
       d2utc d = UTCDate (year d) (month d) (day d) (hour d) (minute d) (second d)
   in d2utc utcDate
 
