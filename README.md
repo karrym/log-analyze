@@ -44,6 +44,7 @@ $ log-analyze FILES [-d BEGIN END]
 ```
 
 ## 実行例
+出力のHourはUTCでの時間を意味します。
 
 ```
 $ log-analyze test/small-test
@@ -55,4 +56,16 @@ Hour	 | Access
 
 
 10.2.3.4 : 6
+```
+
+```
+$ log-analyze test/small-test -d "18/Apr/2005:00:00:00 +0900" "18/Apr/2005:02:00:00 +0900"
+Hour	 | Access
+------------------------------
+15	 | 3
+
+
+
+10.2.3.4 : 3
+
 ```
