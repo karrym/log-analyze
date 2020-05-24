@@ -53,13 +53,19 @@ untilM_ mp md = mp >>= \p -> if p then return () else md >> untilM_ mp md
 analyzeFile :: (Log -> Bool) -> FilePath -> AnalyzeData -> IO AnalyzeData
 analyzeFile p path ad = flip runContT return $ do
   ref <- liftIO $ newIORef ad
+  count <- liftIO $ newIORef 0
   h <- ContT $ withFile path ReadMode
-  liftIO . untilM_ (hIsEOF h) $ stepLog h p ref
+  liftIO . untilM_ (hIsEOF h) $ do
+    modifyIORef' count (+ 1)
+    b <- stepLog h p ref
+    if b then return () else do
+      i <- readIORef count
+      putStrLn $ "fail parse at " ++ path ++ " in " ++ show i
   liftIO $ readIORef ref
 
-stepLog :: Handle -> (Log -> Bool) -> IORef AnalyzeData -> IO ()
+stepLog :: Handle -> (Log -> Bool) -> IORef AnalyzeData -> IO Bool
 stepLog h p ref =
-  maybe (return ()) (modifyIORef' ref . stepAnalyze p)
+  maybe (return False) (\l -> modifyIORef' ref (stepAnalyze p l) >> return True)
       . evalStateT parseLog =<< hGetLine h
 
 analyze :: [FilePath] -> (Log -> Bool) -> IO AnalyzeData
