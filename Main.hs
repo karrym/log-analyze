@@ -4,26 +4,31 @@ import Parse
 import Data
 import Analyze
 import Control.Monad.State
-import qualified Data.IntMap as IM
-import qualified Data.Map as M
+import qualified Data.IntMap.Strict as IM
+import qualified Data.Map.Strict as M
 import System.Environment
 import Data.List
 
 printDateMap :: DateMap -> IO ()
 printDateMap m = do
-  putStrLn "Hour\t | Access"
+  putStrLn "Hour\t\t| Access"
   putStrLn "------------------------------"
-  IM.toAscList m `forM_` \(h, n) -> putStrLn $ show h ++ "\t | " ++ show n
+  [0..23] `forM_` \h -> do
+    putStr $ formatInt 2 h ++":00-" ++ formatInt 2 h ++":59\t| "
+    case IM.lookup h m of
+      Nothing -> print 0
+      Just n -> print n
 
 printHostMap :: HostMap -> IO ()
 printHostMap m =
   forM_ xs $ \(Host h, n) -> putStrLn $ h ++ " : " ++ show n
-  where xs = sortBy (\a b -> compare (snd a) (snd b)) $ M.toList m
+  where xs = sortBy (\a b -> compare (snd b) (snd a)) $ M.toList m
 
 printResult :: AnalyzeData -> IO ()
 printResult (AnalyzeData dm hm) = do
+  putStrLn "Accesses per hour"
   printDateMap dm
-  putStrLn "\n\n"
+  putStrLn "\nAccesses by host"
   printHostMap hm
 
 type Period = (UTCDate, UTCDate)
