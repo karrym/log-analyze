@@ -49,10 +49,10 @@ $ log-analyze FILES [-d BEGIN END]
 $ log-analyze test/small-test
 Hour	 | Access
 ------------------------------
-9	 | 2
-12	 | 2
+9	 | 3
+12	 | 3
 
 
 
-10.2.3.4 : 5
+10.2.3.4 : 6
 ```

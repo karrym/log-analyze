@@ -26,10 +26,10 @@ TODO:
 日付ごとに平均
 -}
 accumByDate :: UTCDate -> DateMap -> DateMap
-accumByDate = IM.alter (Just . maybe 0 (+1)) . utcHour
+accumByDate = IM.alter (Just . maybe 1 (+1)) . utcHour
 
 accumByHost :: Host -> HostMap -> HostMap
-accumByHost = M.alter (Just . maybe 0 (+1))
+accumByHost = M.alter (Just . maybe 1 (+1))
 
 analyzeLogs :: (Log -> Bool) -> [Log] -> AnalyzeData
 analyzeLogs p = foldl' (flip (stepAnalyze p)) emptyData
