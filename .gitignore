@@ -24,3 +24,5 @@ cabal.project.local~
 Main
 Test
 test/middle-test
+test/large-test
+log-analyze
